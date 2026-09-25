@@ -10,6 +10,36 @@ Aplicación móvil de práctica hecha con **React Native** y **Expo**. Tiene var
 | Detalle | `components/DetalleScreen.js` | Pantalla sencilla con un botón para regresar. |
 | Formulario | `components/Formulario.js` | Tarjeta de perfil con campos de correo y teléfono. |
 | Licencia | `components/LicenciaScreen.js` | Muestra una licencia de conducir dentro de una tarjeta. |
+| Tareas | `components/TareasScreen.js` | Lista, crea, marca como completada, edita y borra tareas usando **TareasAPI**. |
+
+### Pantalla de Tareas (conectada a la API)
+
+Consume la API de la carpeta `TareasAPI` (.NET 10, `http://localhost:5134`). Toda la comunicación está en `services/tareasApi.js`; la pantalla solo llama a sus funciones (`obtenerTareas`, `crearTarea`, `actualizarTarea`, `eliminarTarea`).
+
+Para usarla, primero enciende la API y luego la app (en dos terminales):
+
+```bash
+# Terminal 1: la API
+cd ../TareasAPI
+dotnet run
+
+# Terminal 2: la app
+npm start        # y presiona "w" para abrirla en el navegador
+```
+
+La dirección de la API se puede cambiar creando un archivo `.env` en esta carpeta:
+
+```
+EXPO_PUBLIC_API_URL=http://192.168.1.50:5134
+```
+
+| Dónde corre la app | Dirección de la API |
+| --- | --- |
+| Navegador (`w`) o simulador de iOS | `http://localhost:5134` (por defecto) |
+| Emulador de Android | `http://10.0.2.2:5134` (por defecto en Android) |
+| Teléfono físico con Expo Go | `http://<IP de tu PC>:5134`; además la API debe escuchar en `0.0.0.0` y el firewall permitir el puerto 5134 |
+
+En el navegador la API necesita **CORS**; ya está habilitado en `TareasAPI/Program.cs` para `localhost:8081` y `localhost:19006`.
 
 ### Pantalla de Licencia de Conducir
 

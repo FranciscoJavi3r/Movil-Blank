@@ -18,6 +18,7 @@ import InicioScreen from "./components/InicioScreen";
 import DetalleScreen from "./components/DetalleScreen";
 import Formulario from "./components/Formulario";
 import LicenciaScreen from "./components/LicenciaScreen";
+import TareasScreen from "./components/TareasScreen";
 
 // Creamos el objeto Tab, que nos da <Tab.Navigator> y <Tab.Screen>.
 const Tab = createBottomTabNavigator();
@@ -30,6 +31,7 @@ const iconos = {
   Detalle: "information-circle",
   Formulario: "create",
   Licencia: "card",
+  Tareas: "checkbox",
 };
 
 export default function App() {
@@ -69,6 +71,8 @@ export default function App() {
           component={LicenciaScreen}
           options={{ title: "Licencia" }}
         />
+        {/* Pantalla que consume TareasAPI (lista, crea, edita y borra tareas). */}
+        <Tab.Screen name="Tareas" component={TareasScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );

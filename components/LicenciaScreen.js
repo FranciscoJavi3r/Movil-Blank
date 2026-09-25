@@ -99,7 +99,7 @@ export default function LicenciaScreen() {
     tipoLicencia: "Clase B",
     direccion: "Piña 124, Fondo de Bikini",
     estado: "Activa",
-    foto: "https://placekitten.com/150/150", // luego será la foto real de la API
+    foto: "https://imgs.search.brave.com/GwEn5L1bm9LZw7pNui8MYFiRdCAnm_1nFxhYTgIY324/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL00v/TVY1Qk1qSXpOekEw/WVRndE16ZGtPQzAw/T1RVM0xUaGhZVGN0/WW1RM1ltWXlNR1V5/T0RNNFhrRXlYa0Zx/Y0dkZVFYVnlOelUx/TnpFM05UZ0AuanBn", // luego será la foto real de la API
   });
 
   return (

@@ -4,17 +4,15 @@
 // ------------------------------------------------------------
 import { View, Text, Button, StyleSheet } from "react-native";
 
-// Nota: la función se llama InicioScreen, pero como se exporta con
-// "export default", en App.js se importa con el nombre DetalleScreen.
-export default function InicioScreen({ navigation }) {
+export default function DetalleScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Pantalla de Inicio</Text>
+      <Text style={styles.titulo}>Pantalla de Detalle</Text>
       <View style={styles.botonContenedor}>
         {/* navigation.goBack() regresa a la pestaña visitada antes
             (así lo configuramos con backBehavior="history" en App.js) */}
         <Button
-          title="Ir a Inicio"
+          title="Regresar"
           onPress={() => navigation.goBack()}
         />
       </View>
