@@ -1,19 +1,23 @@
 // ------------------------------------------------------------
 // PANTALLA DE LICENCIA DE CONDUCIR
-// Muestra los datos de una licencia dentro de una "tarjeta" (card).
+// Muestra las licencias guardadas en TareasAPI, cada una dentro de
+// una "tarjeta" (card), y permite agregar una licencia nueva.
+//   GET  /licencias  -> trae las licencias
+//   POST /licencias  -> agrega una licencia
 // ------------------------------------------------------------
 
-// useState es un "hook" de React que nos permite guardar datos
-// que pueden cambiar mientras la app está abierta (el "estado").
-import { useState } from "react";
-
-// Componentes básicos de React Native que vamos a usar:
-// - View: una caja/contenedor (como un <div> en HTML).
-// - Text: para mostrar texto.
-// - Image: para mostrar imágenes.
-// - ScrollView: un contenedor que permite deslizar (scroll) si el contenido no cabe.
-// - StyleSheet: para crear los estilos (colores, tamaños, márgenes, etc.).
-import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
+import { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import { obtenerLicencias, crearLicencia } from "../services/licenciasApi";
 
 // ------------------------------------------------------------
 // ESTILOS
@@ -30,6 +34,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 20,
+    marginBottom: 16,
     elevation: 4, // sombra en Android
     shadowColor: "#000", // las propiedades shadow* son la sombra en iOS
     shadowOpacity: 0.15,
@@ -43,6 +48,9 @@ const styles = StyleSheet.create({
   // flexDirection: "row" acomoda los elementos uno al lado del otro.
   filaPrincipal: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   foto: { width: 90, height: 90, borderRadius: 12, marginRight: 16, borderWidth: 2, borderColor: "#0077b6" },
+  // Cuadro que ocupa el lugar de la foto cuando la licencia no tiene una.
+  fotoVacia: { backgroundColor: "#caf0f8", alignItems: "center", justifyContent: "center" },
+  fotoInicial: { fontSize: 36, fontWeight: "bold", color: "#0077b6" },
   // flex: 1 hace que esta parte ocupe el espacio que sobra junto a la foto.
   datosPrincipales: { flex: 1 },
   nombre: { fontSize: 18, fontWeight: "bold", color: "#03045e", marginBottom: 6 },
@@ -63,15 +71,47 @@ const styles = StyleSheet.create({
   etiqueta: { fontSize: 13, color: "#666" },
   // flexShrink: 1 permite que el texto se parta en varias líneas si es muy largo.
   valor: { fontSize: 13, fontWeight: "600", color: "#333", flexShrink: 1, textAlign: "right" },
+  // Formulario para agregar una licencia.
+  tituloFormulario: { fontSize: 16, fontWeight: "bold", color: "#023e8a", marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 10,
+    fontSize: 14,
+  },
+  boton: {
+    backgroundColor: "#0077b6",
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  botonDeshabilitado: { opacity: 0.6 },
+  botonTexto: { color: "#fff", fontWeight: "600" },
+  mensajeError: { color: "#c1121f", marginBottom: 10, textAlign: "center" },
+  centrado: { alignItems: "center", paddingVertical: 30 },
+  vacio: { textAlign: "center", color: "#666", marginBottom: 16 },
 });
+
+// Campos del formulario, en el orden en que se muestran.
+const CAMPOS = [
+  { clave: "nombre", placeholder: "Nombre completo" },
+  { clave: "numeroLicencia", placeholder: "No. de Licencia" },
+  { clave: "fechaNacimiento", placeholder: "Fecha de Nacimiento, dd/mm/aaaa" },
+  { clave: "fechaVencimiento", placeholder: "Fecha de Vencimiento, dd/mm/aaaa" },
+  { clave: "tipoLicencia", placeholder: "Tipo, por ejemplo Clase B" },
+  { clave: "direccion", placeholder: "Dirección" },
+  { clave: "foto", placeholder: "URL de la foto, opcional", opcional: true },
+];
+
+const FORMULARIO_VACIO = Object.fromEntries(CAMPOS.map((c) => [c.clave, ""]));
 
 // ------------------------------------------------------------
 // COMPONENTE EXTERNO: InfoFila
-// Es un componente pequeño y reutilizable que dibuja UNA fila con:
-//   etiqueta (el nombre del dato)  ......  valor (el dato)
-// Recibe dos "props" (parámetros): etiqueta y valor.
+// Dibuja UNA fila con: etiqueta (el nombre del dato) ...... valor (el dato)
 // Ejemplo: <InfoFila etiqueta="Tipo" valor="Clase B" />
-// Así evitamos repetir el mismo código para cada dato.
 // ------------------------------------------------------------
 function InfoFila({ etiqueta, valor }) {
   return (
@@ -82,66 +122,147 @@ function InfoFila({ etiqueta, valor }) {
   );
 }
 
-// ------------------------------------------------------------
-// COMPONENTE PRINCIPAL: LicenciaScreen
-// Es la pantalla completa que se registra en la navegación (App.js).
-// ------------------------------------------------------------
-export default function LicenciaScreen() {
-  // Guardamos todos los datos de la licencia en un solo objeto.
-  // - licencia: el valor actual de los datos (lo que leemos).
-  // - setLicencia: la función para cambiarlos más adelante
-  //   (por ejemplo, cuando los datos vengan de una API).
-  const [licencia, setLicencia] = useState({
-    nombre: "Bob Esponja Pantalones Cuadrados",
-    numeroLicencia: "FQ-000112",
-    fechaNacimiento: "14/07/1986",
-    fechaVencimiento: "14/07/2030",
-    tipoLicencia: "Clase B",
-    direccion: "Piña 124, Fondo de Bikini",
-    estado: "Activa",
-    foto: "https://imgs.search.brave.com/GwEn5L1bm9LZw7pNui8MYFiRdCAnm_1nFxhYTgIY324/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL00v/TVY1Qk1qSXpOekEw/WVRndE16ZGtPQzAw/T1RVM0xUaGhZVGN0/WW1RM1ltWXlNR1V5/T0RNNFhrRXlYa0Zx/Y0dkZVFYVnlOelUx/TnpFM05UZ0AuanBn", // luego será la foto real de la API
-  });
+// Una tarjeta con todos los datos de una licencia.
+function TarjetaLicencia({ licencia }) {
+  // El subtítulo es el lugar, la última parte de la dirección:
+  // "Piña 124, Fondo de Bikini" -> "Fondo de Bikini"
+  const lugar = licencia.direccion.split(",").pop().trim();
 
   return (
-    // ScrollView: si la pantalla es pequeña, el usuario puede deslizar.
-    // "style" es para el ScrollView en sí y "contentContainerStyle" para su contenido.
-    <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenedor}>
-      {/* Tarjeta blanca que contiene toda la licencia */}
-      <View style={styles.card}>
-        {/* Encabezado con los títulos de la licencia */}
-        <View style={styles.encabezado}>
-          <Text style={styles.tituloEncabezado}>LICENCIA DE CONDUCIR</Text>
-          <Text style={styles.subtituloEncabezado}>Fondo de Bikini</Text>
-        </View>
+    <View style={styles.card}>
+      <View style={styles.encabezado}>
+        <Text style={styles.tituloEncabezado}>LICENCIA DE CONDUCIR</Text>
+        <Text style={styles.subtituloEncabezado}>{lugar}</Text>
+      </View>
 
-        {/* Fila principal: foto a la izquierda, nombre y estado a la derecha */}
-        <View style={styles.filaPrincipal}>
-          {/* Para imágenes de internet se usa source={{ uri: "url" }} */}
+      <View style={styles.filaPrincipal}>
+        {licencia.foto ? (
           <Image source={{ uri: licencia.foto }} style={styles.foto} />
+        ) : (
+          <View style={[styles.foto, styles.fotoVacia]}>
+            <Text style={styles.fotoInicial}>{licencia.nombre.charAt(0)}</Text>
+          </View>
+        )}
 
-          <View style={styles.datosPrincipales}>
-            {/* Las llaves { } permiten poner código JavaScript dentro del JSX,
-                aquí leemos el nombre guardado en el estado */}
-            <Text style={styles.nombre}>{licencia.nombre}</Text>
-
-            {/* Badge con el estado de la licencia (ej. "Activa") */}
-            <View style={styles.badge}>
-              <Text style={styles.badgeTexto}>{licencia.estado}</Text>
-            </View>
+        <View style={styles.datosPrincipales}>
+          <Text style={styles.nombre}>{licencia.nombre}</Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeTexto}>{licencia.estado}</Text>
           </View>
         </View>
+      </View>
 
-        {/* Línea separadora */}
-        <View style={styles.linea} />
+      <View style={styles.linea} />
 
-        {/* Usamos el componente InfoFila una vez por cada dato.
-            A cada uno le mandamos su etiqueta (texto fijo) y
-            su valor (el dato que sacamos del estado "licencia"). */}
-        <InfoFila etiqueta="No. de Licencia" valor={licencia.numeroLicencia} />
-        <InfoFila etiqueta="Fecha de Nacimiento" valor={licencia.fechaNacimiento} />
-        <InfoFila etiqueta="Fecha de Vencimiento" valor={licencia.fechaVencimiento} />
-        <InfoFila etiqueta="Tipo" valor={licencia.tipoLicencia} />
-        <InfoFila etiqueta="Dirección" valor={licencia.direccion} />
+      <InfoFila etiqueta="No. de Licencia" valor={licencia.numeroLicencia} />
+      <InfoFila etiqueta="Fecha de Nacimiento" valor={licencia.fechaNacimiento} />
+      <InfoFila etiqueta="Fecha de Vencimiento" valor={licencia.fechaVencimiento} />
+      <InfoFila etiqueta="Tipo" valor={licencia.tipoLicencia} />
+      <InfoFila etiqueta="Dirección" valor={licencia.direccion} />
+    </View>
+  );
+}
+
+// ------------------------------------------------------------
+// COMPONENTE PRINCIPAL: LicenciaScreen
+// ------------------------------------------------------------
+export default function LicenciaScreen() {
+  // Licencias que llegan de la API con GET /licencias.
+  const [licencias, setLicencias] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Datos que se van escribiendo en el formulario.
+  const [formulario, setFormulario] = useState(FORMULARIO_VACIO);
+  const [guardando, setGuardando] = useState(false);
+  const [mensajeForm, setMensajeForm] = useState(null);
+
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      setLicencias(await obtenerLicencias());
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  // Se ejecuta una vez al abrir la pantalla.
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  const cambiarCampo = (clave, valor) =>
+    setFormulario((actual) => ({ ...actual, [clave]: valor }));
+
+  // Envía la licencia nueva con POST /licencias.
+  const guardar = async () => {
+    const faltantes = CAMPOS.filter((c) => !c.opcional && !formulario[c.clave].trim());
+    if (faltantes.length > 0) {
+      setMensajeForm("Completa todos los campos obligatorios.");
+      return;
+    }
+
+    setGuardando(true);
+    setMensajeForm(null);
+    try {
+      const datos = Object.fromEntries(
+        Object.entries(formulario).map(([clave, valor]) => [clave, valor.trim()])
+      );
+      const nueva = await crearLicencia(datos);
+      setLicencias((actuales) => [...actuales, nueva]);
+      setFormulario(FORMULARIO_VACIO);
+    } catch (e) {
+      setMensajeForm(e.message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenedor}>
+      {cargando ? (
+        <View style={styles.centrado}>
+          <ActivityIndicator size="large" color="#0077b6" />
+        </View>
+      ) : error ? (
+        <View style={styles.centrado}>
+          <Text style={styles.mensajeError}>{error}</Text>
+          <Pressable style={[styles.boton, { paddingHorizontal: 20 }]} onPress={cargar}>
+            <Text style={styles.botonTexto}>Reintentar</Text>
+          </Pressable>
+        </View>
+      ) : licencias.length === 0 ? (
+        <Text style={styles.vacio}>Todavía no hay licencias guardadas.</Text>
+      ) : (
+        licencias.map((licencia) => (
+          <TarjetaLicencia key={licencia.id} licencia={licencia} />
+        ))
+      )}
+
+      {/* Formulario para agregar una licencia nueva */}
+      <View style={styles.card}>
+        <Text style={styles.tituloFormulario}>Agregar licencia</Text>
+        {CAMPOS.map((campo) => (
+          <TextInput
+            key={campo.clave}
+            style={styles.input}
+            placeholder={campo.placeholder}
+            value={formulario[campo.clave]}
+            onChangeText={(valor) => cambiarCampo(campo.clave, valor)}
+            autoCapitalize={campo.clave === "foto" ? "none" : "sentences"}
+          />
+        ))}
+        {!!mensajeForm && <Text style={styles.mensajeError}>{mensajeForm}</Text>}
+        <Pressable
+          style={[styles.boton, guardando && styles.botonDeshabilitado]}
+          onPress={guardar}
+          disabled={guardando}
+        >
+          <Text style={styles.botonTexto}>{guardando ? "Guardando..." : "Guardar licencia"}</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );

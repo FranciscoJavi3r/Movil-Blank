@@ -9,7 +9,7 @@ Aplicación móvil de práctica hecha con **React Native** y **Expo**. Tiene var
 | Inicio | `components/InicioScreen.js` | Pantalla inicial con botones que llevan a las demás pantallas. |
 | Detalle | `components/DetalleScreen.js` | Pantalla sencilla con un botón para regresar. |
 | Formulario | `components/Formulario.js` | Tarjeta de perfil con campos de correo y teléfono. |
-| Licencia | `components/LicenciaScreen.js` | Muestra una licencia de conducir dentro de una tarjeta. |
+| Licencia | `components/LicenciaScreen.js` | Muestra las licencias guardadas en **TareasAPI** y permite agregar una nueva. |
 | Tareas | `components/TareasScreen.js` | Lista, crea, marca como completada, edita y borra tareas usando **TareasAPI**. |
 
 ### Pantalla de Tareas (conectada a la API)
@@ -43,9 +43,11 @@ En el navegador la API necesita **CORS**; ya está habilitado en `TareasAPI/Prog
 
 ### Pantalla de Licencia de Conducir
 
-Resuelve la actividad descrita en [`ACTIVITY.md`](ACTIVITY.md):
+Resuelve la actividad descrita en [`ACTIVITY.md`](ACTIVITY.md), ahora conectada a la API:
 
-- Los datos de la licencia se guardan en un `useState` (nombre, número, fechas, tipo, dirección, estado y foto).
+- Al abrirse, trae las licencias con `GET /licencias` y las guarda en un `useState` (nombre, número, fechas, tipo, dirección, estado y foto). Cada licencia se dibuja en su propia tarjeta.
+- Debajo hay un formulario que agrega una licencia con `POST /licencias`.
+- Las peticiones están en `services/licenciasApi.js` (`obtenerLicencias`, `crearLicencia`) y usan la misma dirección de la API que las tareas, `http://localhost:5134` por defecto.
 - Usa el componente **`InfoFila`**, declarado fuera del componente principal, para mostrar cada dato como una fila `etiqueta ... valor`:
 
   ```jsx
